@@ -4,9 +4,7 @@ A Python client for interacting with the Nexus service.
 
 ## Installation
 
-```bash
-pip install nexus-client
-```
+WIP
 
 ## Usage
 
