@@ -1,0 +1,204 @@
+syntax = "proto3";
+
+package nexus;
+option go_package = "nexus/pkg/proto";
+
+// NexusService handles all publisher and consumer operations
+service NexusService {
+  // Publisher endpoints
+  rpc RegisterEventStream (RegisterEventStreamRequest) returns (RegisterEventStreamResponse);
+  rpc RegisterFile (RegisterFileRequest) returns (RegisterFileResponse);
+  rpc RegisterDirectory (RegisterDirectoryRequest) returns (RegisterDirectoryResponse);
+  rpc RegisterDatabaseTable (RegisterDatabaseTableRequest) returns (RegisterDatabaseTableResponse);
+  rpc StoreValue (StoreValueRequest) returns (StoreValueResponse);
+  rpc DeletePath (DeletePathRequest) returns (DeletePathResponse);
+  // Consumer endpoints
+  rpc Subscribe (SubscribeRequest) returns (stream Event);
+  rpc GetNode (GetPathRequest) returns (GetNodeResponse);
+
+  // Add this to the NexusService
+  rpc GetChildren (GetChildrenRequest) returns (GetChildrenResponse);
+
+}
+
+// Request/Response messages for Publishers
+message RegisterEventStreamRequest {
+  string path = 1; // Path in the data Trie
+  EventStream event_stream = 2;
+}
+
+message RegisterEventStreamResponse {
+  bool success = 1;
+  string error = 2;
+}
+
+message RegisterFileRequest {
+  string path = 1; // Path in the data Trie
+  IndividualFile individual_file = 2; // Individual file details
+}
+
+message RegisterFileResponse {
+  bool success = 1;
+  string error = 2;
+}
+
+message RegisterDirectoryRequest {
+  string path = 1; // Path in the data Trie
+  Directory directory = 2; // Directory details
+}
+
+message RegisterDirectoryResponse {
+  bool success = 1;
+  string error = 2;
+}
+
+message RegisterDatabaseTableRequest {
+  string path = 1; // Path in the data Trie
+  DatabaseTable database_table = 2; // Database table details
+}
+
+message RegisterDatabaseTableResponse {
+  bool success = 1;
+  string error = 2;
+}
+
+message StoreValueRequest {
+  string path = 1; // Path in the data Trie
+  oneof value {
+    StringValue string_value = 2; // Example of a specific type
+    IntValue int_value = 3; // Example of a specific type
+    FloatValue float_value = 4; // Example of a specific type
+  }
+}
+
+message StoreValueResponse {
+  bool success = 1;
+  string error = 2;
+}
+
+message DeletePathRequest {
+  string path = 1; // Path in the data Trie
+}
+
+message DeletePathResponse {
+  bool success = 1;
+  string error = 2;
+}
+
+// New message types
+message EventStream {
+  string server = 1; // Kafka server address
+  string topic = 2;  // Kafka topic name
+}
+
+message Dataset {
+  oneof dataset {
+    IndividualFile individual_file = 1;
+    Directory directory = 2;
+    DatabaseTable database_table = 3;
+  }
+}
+
+message IndividualFile {
+  string file_type = 1; // e.g., "csv", "json"
+  string file_path = 2; // Path to the file
+  repeated string column_names = 3; // Optional column names
+}
+
+message Directory {
+  string file_type = 1; // e.g., "csv", "json"
+  string directory_path = 2; // Path to the directory
+  int32 file_count = 3; // Number of files
+}
+
+message DatabaseTable {
+  string db_type = 1; // e.g., "Postgres"
+  string host = 2; // Database server address
+  int32 port = 3; // Database server port
+  string db_name = 4; // Database name
+  string table_name = 5; // Table name
+}
+
+// Define a message for string values
+message StringValue {
+    string value = 1;
+}
+
+// Define a message for integer values
+message IntValue {
+    int32 value = 1; // or int64, depending on your needs
+}
+
+// Define a message for float values
+message FloatValue {
+    float value = 1; // or double, depending on your needs
+}
+
+// Request/Response messages for Consumers
+message SubscribeRequest {
+  string path = 1;
+}
+
+message Event {
+  bytes data = 1;
+}
+
+// New unified request message
+message GetPathRequest {
+  string path = 1; // Path in the data Trie
+}
+
+message GetNodeResponse {
+  oneof value {
+    StringValue string_value = 1;
+    IntValue int_value = 2;
+    FloatValue float_value = 3;
+    IndividualFile individual_file = 4;
+    Directory directory = 5;
+    DatabaseTable database_table = 6;
+    EventStream event_stream = 7;
+  }
+  string value_type = 8;
+  bool is_end_of_path = 9;
+  string error = 10; // Error message if any
+}
+
+// Common messages
+message AccessInfo {
+  oneof info {
+    FileInfo file = 1;
+    DatabaseInfo database = 2;
+  }
+}
+
+message FileInfo {
+  string filepath = 1;
+  string format = 2;
+}
+
+message DatabaseInfo {
+  string connection_string = 1;
+  string table = 2;
+}
+
+// Request message for listing children
+message GetChildrenRequest {
+  string path = 1; // Path in the data Trie
+}
+
+// Response message for listing children
+message GetChildrenResponse {
+  repeated ChildInfo children = 1; // List of child paths and their types
+}
+
+// New message to hold child information
+message ChildInfo {
+  string name = 1; // Name of the child
+  string type = 2; // Type of the child
+  int32 numChildren = 3; // Number of children
+}
+
+message GetPathTypeResponse {
+  string path_type = 1; // The type of the path
+  string error = 2; // Error message if any
+}
